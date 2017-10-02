@@ -5,14 +5,6 @@
 Author:
 Michael D. Troyer
 
-Date:
-
-Purpose:
-
-Comments:
-
-TODO:
-
 """
 def print_dict_to_table(data_dict, name=None, pad=3):
     max_k_len = max([len(str(k)) for k in data_dict.keys()])
@@ -25,25 +17,3 @@ def print_dict_to_table(data_dict, name=None, pad=3):
 
     for k, v in data_dict.items():
         print '|'+str(k).center(k_width)+'|'+str(v).center(v_width)+'|'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###################################################################################################
-#if this .py has been called by interpreter directly and not by another module
-#__name__ == "__main__":    #will be True, else name of importing module
