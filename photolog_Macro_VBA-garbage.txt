@@ -1,0 +1,103 @@
+Sub AddPics()
+    Application.ScreenUpdating = False
+    Dim i As Long, j As Long, c As Long, r As Long, NumCols As Long
+    Dim oTbl As Table, TblWdth As Single, StrTxt As String, RwHght As Single
+    On Error GoTo ErrExit
+    NumCols = CLng(InputBox("How Many Columns per Row?"))
+    RwHght = CSng(InputBox("What row height for the pictures, in inches (e.g. 1.5)?"))
+    On Error GoTo 0
+     'Select and insert the Pics
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Select image files and click OK"
+        .Filters.Add "Images", "*.gif; *.jpg; *.jpeg; *.bmp; *.tif; *.png"
+        .FilterIndex = 2
+        If .Show = -1 Then
+             'Add a 2-row by NumCols-column table to take the images
+            Set oTbl = Selection.Tables.Add(Range:=Selection.Range, NumRows:=2, NumColumns:=NumCols)
+            With ActiveDocument.PageSetup
+                TblWdth = .PageWidth - .LeftMargin - .RightMargin - .Gutter
+            End With
+            With oTbl
+                .AutoFitBehavior (wdAutoFitFixed)
+                .Columns.Width = TblWdth / NumCols
+            End With
+            CaptionLabels.Add Name:="Picture"
+            For i = 1 To .SelectedItems.Count Step NumCols
+                r = ((i - 1) / NumCols + 1) * 2 - 1
+                 'Format the rows
+                Call FormatRows(oTbl, r, RwHght)
+                For c = 1 To NumCols
+                    j = j + 1
+                     'Insert the Picture
+                    ActiveDocument.InlineShapes.AddPicture _
+                    FileName:=.SelectedItems(j), LinkToFile:=False, _
+                    SaveWithDocument:=True, Range:=oTbl.Cell(r, c).Range
+                     'Get the Image name for the Caption
+                    StrTxt = Split(.SelectedItems(j), "\")(UBound(Split(.SelectedItems(j), "\")))
+                    StrTxt = ": " & StrTxt
+                     'Insert the Caption on the row below the picture
+                    With oTbl.Cell(r + 1, c).Range
+                        .InsertBefore vbCr
+                        .Characters.First.InsertCaption _
+                        Label:="Figure", Title:=StrTxt, _
+                        Position:=wdCaptionPositionBelow, ExcludeLabel:=False
+                        .Characters.First = vbNullString
+                        .Characters.Last.Previous = vbNullString
+                    End With
+                     'Exit when we're done
+                    If j = .SelectedItems.Count Then Exit For
+                Next
+                 'Add extra rows as needed
+                If j < .SelectedItems.Count Then
+                    oTbl.Rows.Add
+                    oTbl.Rows.Add
+                End If
+            Next
+        Else
+        End If
+    End With
+    Selection.Find.ClearFormatting
+    Selection.Find.Replacement.ClearFormatting
+    With Selection.Find
+        .Text = ".JPG"
+        .Replacement.Text = ". Photo by Michael D. Troyer."
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = False
+        .MatchCase = False
+        .MatchWholeWord = False
+        .MatchWildcards = False
+        .MatchSoundsLike = False
+        .MatchAllWordForms = False
+    End With
+    With Selection.Find
+    .Text = "_"
+    .Replacement.Text = " "
+    .Forward = True
+    .Wrap = wdFindContinue
+    .Format = False
+    .MatchCase = False
+    .MatchWholeWord = False
+    .MatchWildcards = False
+    .MatchSoundsLike = False
+    .MatchAllWordForms = False
+    End With
+    Selection.Find.Execute Replace:=wdReplaceAll
+ErrExit:
+    Application.ScreenUpdating = True
+End Sub
+ '
+Sub FormatRows(oTbl As Table, x As Long, Hght As Single)
+    With oTbl
+        With .Rows(x)
+            .Height = InchesToPoints(Hght)
+            .HeightRule = wdRowHeightExactly
+            .Range.Style = "Normal"
+        End With
+        With .Rows(x + 1)
+            .Height = CentimetersToPoints(0.5)
+            .HeightRule = wdRowHeightExactly
+            .Range.Style = "Caption"
+        End With
+    End With
+End Sub
