@@ -1,56 +1,72 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 04 09:20:50 2017
+Created on Thu Aug 17 19:48:03 2017
 
-@author: mtroyer
+@author: michael
 """
 
-#class Bunch:
-#    def __init__(self, **kwds):
-#        self.__dict__.update(kwds)
-#
-#    
-## decorators
-def uppercase(func):
-    def wrapper():
-        original_result = func()
-        modified_result = original_result.upper()
-        return original_result + "  -->  " + modified_result
+
+import math
+import timeit
+import logging
+
+from functools import wraps
+from random import randint as rI
+
+
+# Constants
+LOG_FORM = '%(asctime)s %(levelname)s %(message)s'
+LOG_PATH = r'C:\Users\michael\Documents\_logs\log_decorator.log'
+
+# Logging
+logging.basicConfig(filename=LOG_PATH, level=logging.DEBUG, format=LOG_FORM)
+
+
+def log(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        msg = '%s (%s, %s) -> %s' % (func.__name__, args, kwargs, result)
+        logging.debug(msg)
+        return result
     return wrapper
-
-def strong(func):
-    def wrapper():
-        return '<strong>' + func() + '</strong>'
-    return wrapper
-
-def emphasis(func):
-    def wrapper():
-        return '<em>' + func() + '</em>'
-    return wrapper   
-
-@strong
-@uppercase 
-@emphasis    
-def greet():
-    return "Hello World"
 
 
 def trace(func):
-    def trace_wrapper(*args, **kwargs):
-        original_result = func(*args, **kwargs)
-        print
-        print 'TRACE: calling {}() with {}, {}'.format(func.__name__, args, kwargs)
-        print 'TRACE: {}() returned {}'.format(func.__name__, original_result)
-        print
-        return original_result
-    return trace_wrapper
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        print '%s (%s, %s) -> %s' % (func.__name__, args, kwargs, result)
+        return result
+    return wrapper
 
-@uppercase
-@trace 
-def print_x_y(x,y):
-    return str(x) + ' ' + str(y)
-    
-print print_x_y(x='test', y=55)
 
-    
-    
+def fn_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        t0 = timeit.default_timer()
+        result = func(*args, **kwargs)
+        t1 = timeit.default_timer()
+        print '%s (%s, %s) -> %s sec' % (func.__name__, args, kwargs, t1 - t0)
+        return result
+    return wrapper
+
+
+if __name__ == '__main__':
+
+    @log
+    @trace
+    @fn_time
+    def p1p2Dist(pnt1, pnt2):
+        """
+        Returns the distance between two different points
+        """
+        dY = pnt2[1] - pnt1[1]
+        dX = pnt2[0] - pnt1[0]
+        dist = math.hypot(dX, dY)
+        return dist
+
+    jobs = [p1p2Dist(
+            pnt1=[rI(1, 10), rI(1, 10)],
+            pnt2=[rI(1, 10), rI(1, 10)])
+            for _ in range(10)]
